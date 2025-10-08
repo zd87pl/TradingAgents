@@ -25,7 +25,7 @@ from .data_aggregator import DataAggregator
 from .signal_processor import SignalProcessor
 from .alert_engine import AlertEngine, AlertType, AlertPriority
 from .research.ai_research_agent import AIResearchAgent, ResearchQuery, ResearchMode
-from .connectors.perplexity_finance import PerplexityFinanceConnector, AnalysisType, ResearchDepth
+from .connectors.perplexity_ai import PerplexityAIConnector, AnalysisType, ResearchDepth
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class AutonomousScheduler:
         self.perplexity = None
         if config.get('perplexity_api_key') and config.get('openai_api_key'):
             try:
-                self.perplexity = PerplexityFinanceConnector(
+                self.perplexity = PerplexityAIConnector(
                     api_key=config.get('perplexity_api_key')
                 )
                 self.research_agent = AIResearchAgent(

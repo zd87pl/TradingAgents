@@ -1,6 +1,6 @@
 """
-Perplexity Finance API Connector for real-time financial analysis and research.
-FIXED VERSION: Addresses all critical issues from code review.
+Perplexity AI Connector for general-purpose AI queries with financial focus.
+Uses Perplexity's general API (not a specific finance endpoint) with finance-optimized prompts.
 """
 
 import asyncio
@@ -21,6 +21,11 @@ try:
     CACHE_AVAILABLE = True
 except ImportError:
     CACHE_AVAILABLE = False
+    # Define dummy classes to avoid NameError
+    class RedisCache:
+        pass
+    class CacheKey:
+        pass
 
 logger = logging.getLogger(__name__)
 
@@ -89,9 +94,9 @@ class MarketScreenerResult:
     detailed_explanation: str
 
 
-class PerplexityFinanceConnector:
+class PerplexityAIConnector:
     """
-    Fixed connector for Perplexity Finance API providing advanced financial analysis.
+    Connector for Perplexity AI API providing AI-powered analysis with financial expertise.
     """
 
     # List of valid Perplexity models (current API models)
@@ -106,11 +111,11 @@ class PerplexityFinanceConnector:
 
     def __init__(self,
                  api_key: Optional[str] = None,
-                 cache: Optional[RedisCache] = None,
+                 cache: Optional[Any] = None,  # Changed to Any to avoid type issues
                  rate_limit: int = 50,
                  model: Optional[str] = None):
         """
-        Initialize Perplexity Finance connector.
+        Initialize Perplexity AI connector.
 
         Args:
             api_key: Perplexity API key
@@ -308,10 +313,8 @@ class PerplexityFinanceConnector:
                 }
             ],
             "max_tokens": max_tokens,
-            "temperature": 0.2,
-            "return_citations": include_sources,
-            "search_domain_filter": ["finance", "investing", "markets"],
-            "search_recency_filter": "day"
+            "temperature": 0.2
+            # Removed search_domain_filter and search_recency_filter as they cause API errors
         }
 
         async with aiohttp.ClientSession() as session:
@@ -368,7 +371,25 @@ class PerplexityFinanceConnector:
                 raise
 
     async def _rate_limit(self):
-        """Implement proper rate limiting with tracking"""
+        """Use distributed rate limiting if available, else fall back to local"""
+        # Try to use distributed rate limiter if cache is available
+        if self.cache and hasattr(self.cache, 'connected') and self.cache.connected:
+            try:
+                from autonomous.core.rate_limiter import APIRateLimiter
+                limiter = APIRateLimiter(self.cache)
+
+                # Create hash of API key for per-key limiting
+                import hashlib
+                api_key_hash = hashlib.sha256(self.api_key.encode()).hexdigest() if self.api_key else "default"
+
+                await limiter.acquire_api('perplexity', api_key_hash)
+                return  # Successfully acquired
+            except ImportError:
+                pass  # Fall back to local rate limiting
+            except Exception as e:
+                logger.warning(f"Distributed rate limit failed, using local: {e}")
+
+        # Fallback to local rate limiting
         now = datetime.now(timezone.utc)
 
         # Reset counter every minute

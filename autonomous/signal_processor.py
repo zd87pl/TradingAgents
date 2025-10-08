@@ -84,6 +84,16 @@ class SignalProcessor:
         Returns:
             Dictionary with technical levels
         """
+        # Run synchronous yfinance code in thread pool
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            self._calculate_technical_levels_sync,
+            ticker
+        )
+
+    def _calculate_technical_levels_sync(self, ticker: str) -> Dict[str, float]:
+        """Synchronous version for thread pool execution"""
         try:
             import yfinance as yf
             stock = yf.Ticker(ticker)
@@ -225,9 +235,15 @@ class SignalProcessor:
 
             current_price = tech_levels['current_price']
 
-            # Run TradingAgents analysis
+            # Run TradingAgents analysis in thread pool to avoid blocking
             logger.info(f"Running TradingAgents analysis for {ticker}")
-            _, ai_decision = self.trading_agents.propagate(ticker, datetime.now().strftime('%Y-%m-%d'))
+            loop = asyncio.get_event_loop()
+            _, ai_decision = await loop.run_in_executor(
+                None,  # Use default thread pool
+                self.trading_agents.propagate,
+                ticker,
+                datetime.now().strftime('%Y-%m-%d')
+            )
 
             # Combine AI decision with our signals
             avg_confidence = statistics.mean([s.confidence for s in signals])

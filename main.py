@@ -1,30 +1,30 @@
 from tradingagents.graph.trading_graph import TradingAgentsGraph
-from tradingagents.default_config import DEFAULT_CONFIG
-
+from config import get_unified_config, validate_config
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Create a custom config
-config = DEFAULT_CONFIG.copy()
+# Get the unified configuration
+config = get_unified_config()
+
+# Validate configuration
+try:
+    validate_config()
+except ValueError as e:
+    print(f"Configuration error: {e}")
+    exit(1)
+
+# Override any settings for this session if needed
 config["deep_think_llm"] = "gpt-4o-mini"  # Use a different model
 config["quick_think_llm"] = "gpt-4o-mini"  # Use a different model
-config["max_debate_rounds"] = 1  # Increase debate rounds
+config["max_debate_rounds"] = 1  # Debate rounds
 
-# Configure data vendors (default uses yfinance and alpha_vantage)
-config["data_vendors"] = {
-    "core_stock_apis": "yfinance",           # Options: yfinance, alpha_vantage, local
-    "technical_indicators": "yfinance",      # Options: yfinance, alpha_vantage, local
-    "fundamental_data": "alpha_vantage",     # Options: openai, alpha_vantage, local
-    "news_data": "alpha_vantage",            # Options: openai, alpha_vantage, google, local
-}
-
-# Initialize with custom config
+# Initialize with unified config
 ta = TradingAgentsGraph(debug=True, config=config)
 
-# Your IBKR portfolio tickers
-PORTFOLIO_TICKERS = ["AVGO", "MSFT", "MU", "NVDA", "TSM"]  # Excluding SXRV (ETF)
+# Get portfolio tickers from unified config
+PORTFOLIO_TICKERS = config["portfolio_tickers"]
 
 # Analyze your largest position (AVGO - 43 shares)
 print("Analyzing AVGO (Broadcom) - Your largest position...")

@@ -285,7 +285,7 @@ class AIResearchAgent:
 
         try:
             # Use fixed Perplexity connector
-            from autonomous.connectors.perplexity_finance_fixed import ResearchDepth
+            from autonomous.connectors.perplexity_ai import ResearchDepth
 
             screening_result = await self.perplexity.screen_stocks(
                 natural_language_query,
@@ -333,7 +333,7 @@ class AIResearchAgent:
             return "Perplexity connector not available for analysis"
 
         try:
-            from autonomous.connectors.perplexity_finance_fixed import AnalysisType, ResearchDepth
+            from autonomous.connectors.perplexity_ai import AnalysisType, ResearchDepth
 
             analysis = await self.perplexity.analyze_stock(
                 ticker,
@@ -407,7 +407,7 @@ Total Results: {result.total_results}
             if len(ticker_list) > 5:
                 ticker_list = ticker_list[:5]  # Limit to 5
 
-            from autonomous.connectors.perplexity_finance_fixed import AnalysisType, ResearchDepth
+            from autonomous.connectors.perplexity_ai import AnalysisType, ResearchDepth
 
             comparisons = []
             for ticker in ticker_list:
@@ -538,7 +538,7 @@ High-Growth Stocks:
             return "Risk analysis not available"
 
         try:
-            from autonomous.connectors.perplexity_finance_fixed import AnalysisType, ResearchDepth
+            from autonomous.connectors.perplexity_ai import AnalysisType, ResearchDepth
 
             analysis = await self.perplexity.analyze_stock(
                 ticker,

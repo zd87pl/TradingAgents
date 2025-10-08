@@ -20,11 +20,10 @@ import json
 import aiohttp
 import pandas as pd
 
-# Import existing TradingAgents data tools
-import sys
-sys.path.append('..')
-from tradingagents.dataflows.y_finance import YfinanceInterface
-from tradingagents.dataflows.alpha_vantage_news import AlphaVantageNewsInterface
+# Import TradingAgents data tools
+from tradingagents.agents.utils.news_data_tools import get_news
+from tradingagents.agents.utils.core_stock_tools import get_stock_data
+from tradingagents.dataflows.config import get_config as get_dataflow_config
 
 # Optional imports
 try:
@@ -315,6 +314,12 @@ class DataAggregator:
 
         return events
 
+    async def _fetch_news_async(self, ticker: str, start_date: str, end_date: str):
+        """Async wrapper for news fetching"""
+        # Run synchronous function in thread pool
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, get_news, ticker, start_date, end_date)
+
     async def fetch_market_sentiment(self, ticker: str) -> Dict[str, Any]:
         """
         Fetch market sentiment from various sources
@@ -330,26 +335,39 @@ class DataAggregator:
         }
 
         try:
-            # Fetch news sentiment using existing TradingAgents tools
-            news_interface = AlphaVantageNewsInterface()
-            news_data = news_interface.get_news(ticker, datetime.now().strftime('%Y-%m-%d'))
+            # Fetch news sentiment using TradingAgents interface with circuit breaker
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
 
-            if news_data:
-                # Simple sentiment analysis based on news
-                positive_keywords = ['beat', 'surge', 'jump', 'gain', 'profit', 'upgrade']
-                negative_keywords = ['miss', 'fall', 'drop', 'loss', 'downgrade', 'concern']
+            # Wrap in circuit breaker for resilience
+            try:
+                from autonomous.core.circuit_breaker import circuit_breaker_registry, CircuitBreakerConfig
+                config = CircuitBreakerConfig(failure_threshold=3, timeout=30)
+
+                news_data = await circuit_breaker_registry.call(
+                    "news_api",
+                    self._fetch_news_async,
+                    ticker, start_date, end_date,
+                    config=config
+                )
+            except ImportError:
+                # Fallback without circuit breaker
+                news_data = get_news(ticker, start_date, end_date)
+
+            if news_data and isinstance(news_data, str):
+                # Simple sentiment analysis based on news content
+                positive_keywords = ['beat', 'surge', 'jump', 'gain', 'profit', 'upgrade', 'strong', 'bullish']
+                negative_keywords = ['miss', 'fall', 'drop', 'loss', 'downgrade', 'concern', 'weak', 'bearish']
 
                 positive_count = 0
                 negative_count = 0
 
-                for article in news_data[:10]:  # Check first 10 articles
-                    title = article.get('title', '').lower()
-                    for keyword in positive_keywords:
-                        if keyword in title:
-                            positive_count += 1
-                    for keyword in negative_keywords:
-                        if keyword in title:
-                            negative_count += 1
+                # Analyze the news text directly
+                news_lower = news_data.lower()
+                for keyword in positive_keywords:
+                    positive_count += news_lower.count(keyword)
+                for keyword in negative_keywords:
+                    negative_count += news_lower.count(keyword)
 
                 # Calculate sentiment score
                 total = positive_count + negative_count
@@ -362,9 +380,9 @@ class DataAggregator:
                     sentiment['overall_sentiment'] = 'negative'
 
                 sentiment['sources']['news'] = {
-                    'positive_articles': positive_count,
-                    'negative_articles': negative_count,
-                    'total_articles': len(news_data)
+                    'positive_mentions': positive_count,
+                    'negative_mentions': negative_count,
+                    'total_keywords': positive_count + negative_count
                 }
 
         except Exception as e:
@@ -448,9 +466,22 @@ class DataAggregator:
                 )
                 signals.append(signal)
 
-        self.market_signals = signals
-        logger.info(f"Generated {len(signals)} market signals")
-        return signals
+        # Deduplicate signals if cache is available
+        try:
+            from autonomous.core.signal_deduplicator import SignalDeduplicator
+            cache = getattr(self, 'cache', None)  # Get cache if available
+            deduplicator = SignalDeduplicator(cache)
+
+            # Filter out duplicates
+            unique_signals = await deduplicator.filter_duplicates(signals)
+            self.market_signals = unique_signals
+            logger.info(f"Generated {len(unique_signals)} unique signals (filtered {len(signals) - len(unique_signals)} duplicates)")
+            return unique_signals
+        except ImportError:
+            # Fallback if deduplicator not available
+            self.market_signals = signals
+            logger.info(f"Generated {len(signals)} market signals (no deduplication)")
+            return signals
 
     def get_top_opportunities(self, n: int = 5) -> List[MarketSignal]:
         """
