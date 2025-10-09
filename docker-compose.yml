@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  tradingagents:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./dataflows/data_cache:/app/dataflows/data_cache
+    env_file:
+      - .env
+
+
