@@ -367,7 +367,7 @@ class AlertEngine:
         Args:
             recommendation: TradingRecommendation object
         """
-        from .signal_processor import TradingRecommendation
+        from .models import TradingRecommendation
 
         if isinstance(recommendation, TradingRecommendation):
             # Format title based on action

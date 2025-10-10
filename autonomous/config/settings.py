@@ -150,8 +150,11 @@ class Config:
             errors.append("ALPHA_VANTAGE_API_KEY is required")
 
         # Check notification settings
-        if not any([cls.DISCORD_WEBHOOK_URL, cls.TELEGRAM_BOT_TOKEN, cls.EMAIL_SENDER]):
-            errors.append("At least one notification method must be configured")
+        discord_ok = bool(cls.DISCORD_WEBHOOK_URL)
+        telegram_ok = bool(cls.TELEGRAM_BOT_TOKEN and cls.TELEGRAM_CHAT_ID)
+        email_ok = bool(cls.EMAIL_SENDER and cls.EMAIL_PASSWORD and cls.EMAIL_RECIPIENT)
+        if not any([discord_ok, telegram_ok, email_ok]):
+            errors.append("At least one notification method (Discord, Telegram, or Email) must be fully configured.")
 
         # Validate risk settings
         if cls.MAX_POSITION_SIZE > 0.5:

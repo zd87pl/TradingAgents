@@ -38,6 +38,7 @@ logs/
 *.pid
 
 # Environment
+.env
 .env.local
 .env.development
 .env.test

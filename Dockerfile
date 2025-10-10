@@ -81,7 +81,7 @@ USER trader
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python -c "import sys; sys.path.insert(0, '/app'); from autonomous.core.health_check import health_check; exit(0 if health_check() else 1)" || exit 1
+    CMD python -c "import sys; sys.path.insert(0, '/app'); from autonomous.core.health_check import health_check; sys.exit(0 if health_check() else 1)"
 
 # Expose ports
 # 8000 - API/Dashboard

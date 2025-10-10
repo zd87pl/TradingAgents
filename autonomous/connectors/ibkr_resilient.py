@@ -279,7 +279,7 @@ class ResilientIBKRConnector:
             if self.ib:
                 try:
                     self.ib.disconnect()
-                except:
+                except Exception:
                     pass
 
             # Attempt reconnection

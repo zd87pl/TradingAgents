@@ -59,13 +59,15 @@ decisions = {}
 for i, position in enumerate(PORTFOLIO, 1):
     ticker = position["ticker"]
 
-    # Skip ETF for now (SXRV might not have all data available)
-    if ticker == "SXRV":
-        print(f"\n[{i}/6] Skipping {ticker} (ETF - limited data)")
+    # Use yfinance to check if the ticker is an ETF
+    import yfinance as yf
+    stock_info = yf.Ticker(ticker).info
+    if stock_info.get('quoteType') == 'ETF':
+        print(f"\n[{i}/{len(PORTFOLIO)}] Skipping {ticker} (ETF - limited data)")
         decisions[ticker] = "ETF - Manual review recommended"
         continue
 
-    print(f"\n[{i}/6] Analyzing {ticker} ({position['name']})...")
+    print(f"\n[{i}/{len(PORTFOLIO)}] Analyzing {ticker} ({position['name']})...")
     print("      🔄 Agents working...")
 
     try:

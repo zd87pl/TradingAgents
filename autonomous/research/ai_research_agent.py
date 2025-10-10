@@ -489,8 +489,12 @@ Market Sentiment ({target}):
             # Analyze sector distribution
             sectors = {}
             for pos in positions:
-                # Simplified sector mapping
-                sector = "Technology"  # Would need actual sector lookup
+                # Use yfinance to get actual sector
+                import yfinance as yf
+                try:
+                    sector = yf.Ticker(pos.ticker).info.get('sector', 'Unknown')
+                except Exception:
+                    sector = 'Unknown'
                 sectors[sector] = sectors.get(sector, 0) + 1
 
             gaps = []

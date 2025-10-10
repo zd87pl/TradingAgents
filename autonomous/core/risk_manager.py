@@ -551,10 +551,12 @@ class RiskManager:
             daily_pnl = sum(t.pnl or 0 for t in today_trades)
 
             # Add unrealized P&L changes
-            positions = await self._get_all_positions()
-            for position in positions:
-                # Simplified - would compare to morning snapshot
-                daily_pnl += position.unrealized_pnl * Decimal('0.1')  # Estimate
+            # TODO: Implement proper daily P&L tracking by storing portfolio value
+            # at market open and comparing to current value. For now, we only
+            # track realized P&L from today's trades.
+            # In production, you should:
+            # 1. Store portfolio_value_at_open in database each trading day
+            # 2. Calculate: daily_pnl = current_portfolio_value - portfolio_value_at_open
 
             return daily_pnl
 

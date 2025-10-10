@@ -345,11 +345,12 @@ class OrderManager:
         if market_price:
             # Check for unreasonable prices
             if request.limit_price:
-                price_diff = abs(float(request.limit_price) - market_price) / market_price
-                if price_diff > 0.10:  # More than 10% away
-                    context.validation_errors.append(
-                        f"Limit price {request.limit_price} is >10% from market {market_price}"
-                    )
+                if market_price > 0:
+                    price_diff = abs(float(request.limit_price) - market_price) / market_price
+                    if price_diff > 0.10:  # More than 10% away
+                        context.validation_errors.append(
+                            f"Limit price {request.limit_price} is >10% from market {market_price}"
+                        )
 
         # Check trading halts
         if await self._is_halted(request.ticker):
