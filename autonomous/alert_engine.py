@@ -170,7 +170,7 @@ class AlertEngine:
             # Color based on priority
             colors = {
                 AlertPriority.CRITICAL: 0xFF0000,  # Red
-                AlertPriority.HIGH: 0FFA500,  # Orange
+                AlertPriority.HIGH: 0xFFA500,  # Orange (fixed: 0x prefix added)
                 AlertPriority.MEDIUM: 0x00FF00,  # Green
                 AlertPriority.LOW: 0x0000FF,  # Blue
                 AlertPriority.INFO: 0x808080  # Gray
