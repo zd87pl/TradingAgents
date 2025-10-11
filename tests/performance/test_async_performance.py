@@ -8,7 +8,8 @@ Validates that async optimizations improve performance.
 import pytest
 import asyncio
 import time
-from unittest.mock import Mock, patch
+from datetime import datetime
+from unittest.mock import Mock, patch, AsyncMock
 from concurrent.futures import ThreadPoolExecutor
 
 from autonomous.signal_processor import SignalProcessor
@@ -21,7 +22,13 @@ class TestAsyncPerformance:
     @pytest.mark.asyncio
     async def test_thread_pool_executor_performance(self, test_config):
         """Test that thread pool executor prevents blocking."""
-        processor = SignalProcessor(Mock(), test_config)
+        # Mock TradingAgentsGraph to avoid OpenAI initialization
+        with patch('autonomous.signal_processor.TradingAgentsGraph') as mock_graph_class:
+            mock_graph = Mock()
+            mock_graph.propagate = Mock(return_value=("", "BUY"))
+            mock_graph_class.return_value = mock_graph
+            
+            processor = SignalProcessor(Mock(), Mock(), test_config)
 
         # Create a slow synchronous function
         def slow_sync_function(ticker):
@@ -94,7 +101,13 @@ class TestAsyncPerformance:
     @pytest.mark.asyncio
     async def test_signal_processor_non_blocking(self, test_config):
         """Test SignalProcessor doesn't block on TradingAgents calls."""
-        processor = SignalProcessor(Mock(), test_config)
+        # Mock TradingAgentsGraph to avoid OpenAI initialization
+        with patch('autonomous.signal_processor.TradingAgentsGraph') as mock_graph_class:
+            mock_graph = Mock()
+            mock_graph.propagate = Mock(return_value=("", "BUY"))
+            mock_graph_class.return_value = mock_graph
+            
+            processor = SignalProcessor(Mock(), Mock(), test_config)
 
         # Mock slow TradingAgents propagate
         with patch.object(processor.trading_agents, 'propagate') as mock_propagate:
@@ -144,7 +157,7 @@ class TestAsyncPerformance:
         async def limited_operation(id: int):
             """Operation with rate limiting."""
             try:
-                await limiter.acquire(f"test_{id}", config)
+                await limiter.acquire("test_service", config)  # Use same identifier for all
                 await asyncio.sleep(0.1)  # Simulate work
                 return f"success_{id}"
             except:
@@ -223,11 +236,12 @@ class TestAsyncPerformance:
         assert elapsed < 0.1  # Should be very fast
         assert len(unique_signals) == 1000  # All unique in this case
 
-        # Test with actual duplicates
+        # Test with actual duplicates - use a fresh deduplicator
+        dedup_fresh = SignalDeduplicator(cache=None)
         duplicate_signals = signals + signals  # 2000 signals, 1000 duplicates
 
         start = asyncio.get_event_loop().time()
-        unique_signals2 = await deduplicator.filter_duplicates(duplicate_signals)
+        unique_signals2 = await dedup_fresh.filter_duplicates(duplicate_signals)
         elapsed2 = asyncio.get_event_loop().time() - start
 
         # Should still be fast even with duplicates
@@ -271,4 +285,3 @@ class TestCachePerformance:
         assert improvement > 10  # At least 10x faster with cache
 
 
-from datetime import datetime

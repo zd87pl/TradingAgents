@@ -31,4 +31,17 @@ dependencies = [
     "tushare>=1.4.21",
     "typing-extensions>=4.14.0",
     "yfinance>=0.2.63",
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.2.0",
 ]
+
+[tool.pytest.ini_options]
+addopts = "-v --tb=short"
+minversion = "6.0"
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m not slow')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+asyncio_mode = "auto"

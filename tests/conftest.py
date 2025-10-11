@@ -85,6 +85,9 @@ def test_config():
         "alpha_vantage_api_key": "test_key",
         "openai_api_key": "test_key",
         "perplexity_api_key": "test_key",
+        "deep_think_llm": "gpt-4o-mini",
+        "quick_think_llm": "gpt-4o-mini",
+        "backend_url": "https://api.openai.com/v1",
         "risk_management": {
             "max_position_size": 0.20,
             "max_daily_loss": 0.05,
@@ -118,6 +121,17 @@ def mock_ibkr():
     ibkr.place_order = AsyncMock(return_value="ORDER-123")
     ibkr.get_order_status = AsyncMock(return_value="FILLED")
     return ibkr
+
+
+# Mock TradingAgentsGraph
+@pytest.fixture
+def mock_trading_agents_graph():
+    """Mock TradingAgentsGraph to avoid OpenAI initialization."""
+    graph = Mock()
+    graph.propagate = Mock(return_value=("", "BUY NVDA"))
+    graph.deep_thinking_llm = Mock()
+    graph.quick_thinking_llm = Mock()
+    return graph
 
 
 # Test Data Fixtures
