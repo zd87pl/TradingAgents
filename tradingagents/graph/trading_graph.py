@@ -33,7 +33,12 @@ from tradingagents.agents.utils.agent_utils import (
     get_news,
     get_insider_sentiment,
     get_insider_transactions,
-    get_global_news
+    get_global_news,
+    get_options_summary,
+    get_options_chain,
+    get_historical_volatility,
+    get_implied_volatility_rank,
+    calculate_greeks,
 )
 
 from .conditional_logic import ConditionalLogic
@@ -48,14 +53,14 @@ class TradingAgentsGraph:
 
     def __init__(
         self,
-        selected_analysts=["market", "social", "news", "fundamentals"],
+        selected_analysts=["market", "social", "news", "fundamentals", "options"],
         debug=False,
         config: Dict[str, Any] = None,
     ):
         """Initialize the trading agents graph and components.
 
         Args:
-            selected_analysts: List of analyst types to include
+            selected_analysts: List of analyst types to include (market, social, news, fundamentals, options)
             debug: Whether to run in debug mode
             config: Configuration dictionary. If None, uses default config
         """
@@ -155,6 +160,16 @@ class TradingAgentsGraph:
                     get_income_statement,
                 ]
             ),
+            "options": ToolNode(
+                [
+                    # Options trading analysis tools
+                    get_options_summary,
+                    get_options_chain,
+                    get_historical_volatility,
+                    get_implied_volatility_rank,
+                    calculate_greeks,
+                ]
+            ),
         }
 
     def propagate(self, company_name, trade_date):
@@ -201,6 +216,7 @@ class TradingAgentsGraph:
             "sentiment_report": final_state["sentiment_report"],
             "news_report": final_state["news_report"],
             "fundamentals_report": final_state["fundamentals_report"],
+            "options_report": final_state.get("options_report", ""),  # Include options report if available
             "investment_debate_state": {
                 "bull_history": final_state["investment_debate_state"]["bull_history"],
                 "bear_history": final_state["investment_debate_state"]["bear_history"],
