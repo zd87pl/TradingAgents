@@ -3,6 +3,13 @@ from typing import Annotated
 # Import from vendor-specific modules
 from .local import get_YFin_data, get_finnhub_news, get_finnhub_company_insider_sentiment, get_finnhub_company_insider_transactions, get_simfin_balance_sheet, get_simfin_cashflow, get_simfin_income_statements, get_reddit_global_news, get_reddit_company_news
 from .y_finance import get_YFin_data_online, get_stock_stats_indicators_window, get_balance_sheet as get_yfinance_balance_sheet, get_cashflow as get_yfinance_cashflow, get_income_statement as get_yfinance_income_statement, get_insider_transactions as get_yfinance_insider_transactions
+from .yfinance_options import (
+    get_options_chain,
+    get_historical_volatility,
+    get_implied_volatility_rank,
+    calculate_greeks,
+    get_options_summary
+)
 from .google import get_google_news
 from .openai import get_stock_news_openai, get_global_news_openai, get_fundamentals_openai
 from .alpha_vantage import (
@@ -50,6 +57,16 @@ TOOLS_CATEGORIES = {
             "get_global_news",
             "get_insider_sentiment",
             "get_insider_transactions",
+        ]
+    },
+    "options_data": {
+        "description": "Options chains, Greeks, IV metrics",
+        "tools": [
+            "get_options_chain",
+            "get_historical_volatility",
+            "get_implied_volatility_rank",
+            "calculate_greeks",
+            "get_options_summary"
         ]
     }
 }
@@ -113,6 +130,22 @@ VENDOR_METHODS = {
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
         "local": get_finnhub_company_insider_transactions,
+    },
+    # options_data
+    "get_options_chain": {
+        "yfinance": get_options_chain,
+    },
+    "get_historical_volatility": {
+        "yfinance": get_historical_volatility,
+    },
+    "get_implied_volatility_rank": {
+        "yfinance": get_implied_volatility_rank,
+    },
+    "calculate_greeks": {
+        "yfinance": calculate_greeks,
+    },
+    "get_options_summary": {
+        "yfinance": get_options_summary,
     },
 }
 
